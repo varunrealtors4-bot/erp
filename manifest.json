@@ -1,12 +1,24 @@
 {
-  "background_color": "#ffffff",
-  "dir": "ltr",
-  "display": "standalone",
   "name": "Shri Ram Prakash and Group ERP",
-  "orientation": "any",
-  "scope": "/",
   "short_name": "SRPG ERP",
-  "start_url": "/",
-  "theme_color": "#ffffff",
-  "id": "ERP"
+  "start_url": "./?app=srpg-erp",
+  "id": "/?app=srpg-erp",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e3a8a",
+  "description": "ERP system for Shri Ram Prakash and Group",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://via.placeholder.com/512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
