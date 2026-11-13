@@ -1,0 +1,13 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Shri Ram Prakash and Group ERP",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "SRPG ERP",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "description": "Real Estate Management System for Shri Ram Prakash and Group",
+  "id": "/?app=srpg-erp"
+}

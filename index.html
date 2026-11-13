@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shri Ram Prakash & Group - Real Estate ERP (Cloud Sync)</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --primary-light: #3b82f6;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #1e293b;
+    --border: #cbd5e1;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+  }
+  * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--text); }
+  
+  /* Header & Letterhead */
+  .letterhead {
+    background: #0f172a; color: #fff; text-align: center; padding: 15px 10px;
+    border-bottom: 4px solid #f59e0b;
+  }
+  .letterhead h1 { margin: 0; font-size: 22px; color: #fbbf24; letter-spacing: 1px; }
+  .letterhead p { margin: 4px 0; font-size: 13px; color: #e2e8f0; }
+
+  /* Navigation */
+  .nav-tabs {
+    display: flex; flex-wrap: wrap; background: var(--primary); padding: 5px; gap: 5px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-btn {
+    background: rgba(255,255,255,0.1); color: #fff; border: none; padding: 10px 14px;
+    cursor: pointer; border-radius: 5px; font-weight: 600; font-size: 13px; flex: 1 1 auto;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.2); }
+  .nav-btn.active { background: #f59e0b; color: #000; }
+
+  /* Container */
+  .container { max-width: 1200px; margin: 15px auto; padding: 0 15px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Cards & Forms */
+  .card {
+    background: var(--card); padding: 20px; border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 20px;
+  }
+  .card h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; font-size: 18px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .form-group { display: flex; flex-direction: column; }
+  label { font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #475569; }
+  input, select, textarea {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 5px; font-size: 14px;
+  }
+  input:read-only { background: #e2e8f0; font-weight: bold; }
+  .btn {
+    padding: 10px 16px; border: none; border-radius: 5px; cursor: pointer;
+    font-weight: 600; font-size: 14px; margin-top: 10px; display: inline-block;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-warning { background: var(--warning); color: #fff; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; margin: 2px; }
+
+  /* Tables */
+  .table-responsive { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+  th { background: #e2e8f0; color: #1e293b; }
+  .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: #fff; }
+  .bg-avail { background: var(--success); }
+  .bg-booked { background: var(--warning); }
+  .bg-sold { background: var(--danger); }
+
+  /* Seller dynamic row */
+  .seller-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: end; }
+
+  /* Print Area */
+  #print-modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); z-index: 999; overflow-y: auto; padding: 20px;
+  }
+  .print-box {
+    background: #fff; max-width: 800px; margin: auto; padding: 25px; border-radius: 8px;
+  }
+  @media print {
+    body * { visibility: hidden; }
+    #print-area, #print-area * { visibility: visible; }
+    #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="letterhead">
+  <h1>SHRI RAM PRAKASH AND GROUP</h1>
+  <p>NEAR DOORDARSHAN KENDRA, BADAUN ROAD, LAL PHATAK, KANDHARPUR, BAREILLY (U.P.)</p>
+  <p>Contact: 9758029525, 9368394114, 7900333344, 9368520642 | Web: www.shriramprakash.com | Email: shriramprakashandgroup@gmail.com</p>
+</div>
+
+<div class="nav-tabs">
+  <button class="nav-btn active" id="btn-tab-land" onclick="openTab('tab-land')">1. Land Agreement</button>
+  <button class="nav-btn" id="btn-tab-land-reg" onclick="openTab('tab-land-reg')">2. Land Registry</button>
+  <button class="nav-btn" id="btn-tab-inv" onclick="openTab('tab-inv')">3. Plot Inventory</button>
+  <button class="nav-btn" id="btn-tab-crm" onclick="openTab('tab-crm')">4. Customer CRM</button>
+  <button class="nav-btn" id="btn-tab-follow" onclick="openTab('tab-follow')">5. Followups</button>
+  <button class="nav-btn" id="btn-tab-book" onclick="openTab('tab-book')">6. Plot Booking</button>
+  <button class="nav-btn" id="btn-tab-plot-reg" onclick="openTab('tab-plot-reg')">7. Plot Registry/Cancel</button>
+  <button class="nav-btn" id="btn-tab-acc" onclick="openTab('tab-acc')">8. Accounting</button>
+</div>
+
+<div class="container">
+
+  <!-- TAB 1: LAND PURCHASE AGREEMENT -->
+  <div id="tab-land" class="tab-content active card">
+    <h2>Land Purchase Agreement Form</h2>
+    <div class="grid">
+      <div class="form-group"><label>Date of Agreement *</label><input type="date" id="la-date"></div>
+      <div class="form-group"><label>Gata Number *</label><input type="text" id="la-gata" placeholder="e.g. 142/2"></div>
+      <div class="form-group"><label>Village / Location *</label><input type="text" id="la-village"></div>
+      <div class="form-group"><label>Area (in Bighas) *</label><input type="number" step="0.01" id="la-area" oninput="calcLandTotal()"></div>
+      <div class="form-group"><label>Rate (Per Bigha ₹) *</label><input type="number" id="la-rate" oninput="calcLandTotal()"></div>
+      <div class="form-group"><label>Total Amount (₹)</label><input type="number" id="la-total" readonly></div>
+    </div>
+
+    <h4 style="margin: 15px 0 5px;">Sellers Details (Add Multiple Sellers)</h4>
+    <div id="sellers-container">
+      <div class="seller-row">
+        <div class="form-group"><label>Seller Name *</label><input type="text" class="s-name"></div>
+        <div class="form-group"><label>Seller Mobile *</label><input type="text" class="s-mob"></div>
+        <div class="form-group"><label>Seller Address</label><input type="text" class="s-addr"></div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="addSellerRow()">+ Add Seller</button>
+      </div>
+    </div>
+
+    <h4 style="margin: 15px 0 5px;">Buyer & Payment Details</h4>
+    <div class="grid">
+      <div class="form-group"><label>Buyer Name</label><input type="text" id="la-bname" value="Shri Ram Prakash and Group"></div>
+      <div class="form-group"><label>Buyer Mobile</label><input type="text" id="la-bmob" value="9758029525"></div>
+      <div class="form-group"><label>Buyer Address</label><input type="text" id="la-baddr" value="Kandharpur, Bareilly"></div>
+      <div class="form-group"><label>Initial Advance (₹) *</label><input type="number" id="la-adv" oninput="calcLandTotal()"></div>
+      <div class="form-group"><label>Payment Mode *</label>
+        <select id="la-mode"><option>Cash</option><option>UPI</option><option>Transfer</option><option>Cheque</option></select>
+      </div>
+      <div class="form-group"><label>Payment Ref / Cheque / UTR No.</label><input type="text" id="la-ref"></div>
+      <div class="form-group"><label>Advance Received By</label><input type="text" id="la-recby"></div>
+      <div class="form-group"><label>Balance Amount (₹)</label><input type="number" id="la-bal" readonly></div>
+      <div class="form-group"><label>Target Registry Date (8 AM Reminder)</label><input type="date" id="la-regdate"></div>
+    </div>
+
+    <h4 style="margin: 15px 0 5px;">Agreement "Dafa 60" Legal Details</h4>
+    <div class="grid">
+      <div class="form-group"><label>Wahi Number</label><input type="text" id="la-wahi"></div>
+      <div class="form-group"><label>Jild Number</label><input type="text" id="la-jild"></div>
+      <div class="form-group"><label>Prushth Number</label><input type="text" id="la-prushth"></div>
+      <div class="form-group"><label>Kramank</label><input type="text" id="la-kramank"></div>
+      <div class="form-group"><label>Dafa 60 Date</label><input type="date" id="la-d60date"></div>
+    </div>
+    <button class="btn btn-success" onclick="saveLandAgreement()">Save Agreement</button>
+  </div>
+
+  <!-- TAB 2: LAND REGISTRY -->
+  <div id="tab-land-reg" class="tab-content card">
+    <h2>Land Registry Form (Auto-Fetch by Gata No.)</h2>
+    <div class="grid">
+      <div class="form-group"><label>Enter / Select Gata Number *</label>
+        <select id="lr-gata" onchange="fetchLandForRegistry()"><option value="">-- Select Gata --</option></select>
+      </div>
+      <div class="form-group"><label>Date of Registry *</label><input type="date" id="lr-date"></div>
+      <div class="form-group"><label>Village / Location</label><input type="text" id="lr-village" readonly></div>
+      <div class="form-group"><label>Sellers</label><input type="text" id="lr-sellers" readonly></div>
+      <div class="form-group"><label>Buyer</label><input type="text" id="lr-buyer" readonly></div>
+      <div class="form-group"><label>Area (Bighas)</label><input type="text" id="lr-area" readonly></div>
+      <div class="form-group"><label>Total Deal Amount (₹)</label><input type="number" id="lr-total" readonly></div>
+      <div class="form-group"><label>Already Paid in Agreement (₹)</label><input type="number" id="lr-paid" readonly></div>
+      <div class="form-group"><label>Final Registry Payment (₹)</label><input type="number" id="lr-finalpay" oninput="calcLandRegBal()"></div>
+      <div class="form-group"><label>Payment Mode</label><select id="lr-mode"><option>Cash</option><option>UPI</option><option>Transfer</option><option>Cheque</option></select></div>
+      <div class="form-group"><label>Cheque / UTR / Ref No.</label><input type="text" id="lr-ref"></div>
+      <div class="form-group"><label>Received By</label><input type="text" id="lr-recby"></div>
+      <div class="form-group"><label>Remaining Balance (₹)</label><input type="number" id="lr-bal" readonly></div>
+    </div>
+    <h4 style="margin: 15px 0 5px;">Registry "Dafa 60" Details</h4>
+    <div class="grid">
+      <div class="form-group"><label>Wahi Number</label><input type="text" id="lr-wahi"></div>
+      <div class="form-group"><label>Jild Number</label><input type="text" id="lr-jild"></div>
+      <div class="form-group"><label>Prushth Number</label><input type="text" id="lr-prushth"></div>
+      <div class="form-group"><label>Kramank</label><input type="text" id="lr-kramank"></div>
+      <div class="form-group"><label>Dafa 60 Date</label><input type="date" id="lr-d60date"></div>
+    </div>
+    <button class="btn btn-success" onclick="saveLandRegistry()">Complete Land Registry & Generate PDF</button>
+  </div>
+
+  <!-- TAB 3: INVENTORY -->
+  <div id="tab-inv" class="tab-content card">
+    <h2>Add Plot / House Inventory (Up to 1000 Units)</h2>
+    <div class="grid">
+      <div class="form-group"><label>Project / Colony Name *</label><input type="text" id="inv-proj" placeholder="e.g. Ram Vihar Phase 1"></div>
+      <div class="form-group"><label>Plot / House Number *</label><input type="text" id="inv-plot" placeholder="e.g. A-101"></div>
+      <div class="form-group"><label>Size (Sq. Yards) *</label><input type="number" id="inv-size"></div>
+      <div class="form-group"><label>Nature of Property</label><select id="inv-nature"><option>Residential</option><option>Commercial</option></select></div>
+      <div class="form-group"><label>Position</label><select id="inv-corner"><option>Non-Corner</option><option>Corner</option></select></div>
+      <div class="form-group"><label>Status</label><select id="inv-status"><option>Available</option><option>Booked</option><option>Sold</option></select></div>
+    </div>
+    <h4 style="margin: 15px 0 5px;">Boundaries & Front Road Width</h4>
+    <div class="grid">
+      <div class="form-group"><label>East (Plot No / Road Width)</label><input type="text" id="inv-east" placeholder="e.g. Plot A-102 / 40ft Road"></div>
+      <div class="form-group"><label>West (Plot No / Road Width)</label><input type="text" id="inv-west" placeholder="e.g. 40ft Road"></div>
+      <div class="form-group"><label>South (Plot No / Road Width)</label><input type="text" id="inv-south" placeholder="e.g. 50ft Road"></div>
+      <div class="form-group"><label>North (Plot No / Road Width)</label><input type="text" id="inv-north" placeholder="e.g. Park / 50ft Road"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveInventory()">Add to Inventory</button>
+
+    <h2 style="margin-top: 25px;">Plot Inventory List</h2>
+    <div class="table-responsive">
+      <table id="tbl-inv">
+        <thead><tr><th>Project</th><th>Plot No</th><th>Size (Sq.Yd)</th><th>Type</th><th>Boundaries (E/W/S/N)</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 4: CUSTOMER CRM -->
+  <div id="tab-crm" class="tab-content card">
+    <h2>Customer Lead Form</h2>
+    <div class="grid">
+      <div class="form-group"><label>Unique Customer ID</label><input type="text" id="crm-id" readonly></div>
+      <div class="form-group"><label>Full Name *</label><input type="text" id="crm-name"></div>
+      <div class="form-group"><label>Mobile Number *</label><input type="text" id="crm-mob1"></div>
+      <div class="form-group"><label>Second Mobile Number</label><input type="text" id="crm-mob2"></div>
+      <div class="form-group"><label>Address</label><input type="text" id="crm-addr"></div>
+      <div class="form-group"><label>Requirement</label><input type="text" id="crm-req" placeholder="e.g. 100 Sq Yd Corner"></div>
+      <div class="form-group"><label>Interested Project / Colony</label><input type="text" id="crm-proj"></div>
+      <div class="form-group"><label>Lead Source *</label><select id="crm-src"><option>Walk-in</option><option>Reference</option><option>Social Media</option><option>Newspaper/Banner</option><option>Broker</option></select></div>
+      <div class="form-group"><label>Status *</label><select id="crm-status"><option>Interested</option><option>Pending</option><option>Inactive</option></select></div>
+      <div class="form-group"><label>Last Contact Date</label><input type="date" id="crm-last"></div>
+      <div class="form-group"><label>Next Followup Date</label><input type="date" id="crm-next"></div>
+      <div class="form-group"><label>Deal With (Team Member) *</label><input type="text" id="crm-agent"></div>
+      <div class="form-group"><label>Team Quoted Price (₹/Sq.Yd) *</label><input type="number" id="crm-tprice"></div>
+      <div class="form-group"><label>Customer Quoted Price (₹/Sq.Yd) *</label><input type="number" id="crm-cprice"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+
+    <h2 style="margin-top: 25px;">Customer Database</h2>
+    <div class="table-responsive">
+      <table id="tbl-crm">
+        <thead><tr><th>Cust ID</th><th>Name</th><th>Mobile</th><th>Project</th><th>Status</th><th>Next Followup</th><th>Team / Cust Quote</th><th>Agent</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 5: FOLLOWUPS -->
+  <div id="tab-follow" class="tab-content card">
+    <h2>Pending Followup Dashboard</h2>
+    <div class="table-responsive">
+      <table id="tbl-follow">
+        <thead><tr><th>Cust ID</th><th>Name</th><th>Mobile</th><th>Interested Project</th><th>Next Followup</th><th>Status</th><th>Assigned To</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 6: PLOT BOOKING -->
+  <div id="tab-book" class="tab-content card">
+    <h2>Plot Booking Form</h2>
+    <div class="grid">
+      <div class="form-group"><label>Invoice Number</label><input type="text" id="bk-inv" readonly></div>
+      <div class="form-group"><label>Booking Date</label><input type="date" id="bk-date"></div>
+      <div class="form-group"><label>Select Customer ID *</label><select id="bk-custid" onchange="fillBookingCust()"><option value="">-- Select Customer --</option></select></div>
+      <div class="form-group"><label>Customer Name (Editable)</label><input type="text" id="bk-cname"></div>
+      <div class="form-group"><label>Mobile Number</label><input type="text" id="bk-cmob"></div>
+      <div class="form-group"><label>Address</label><input type="text" id="bk-caddr"></div>
+      
+      <div class="form-group"><label>Select Available Plot *</label><select id="bk-plot" onchange="fillBookingPlot()"><option value="">-- Select Plot --</option></select></div>
+      <div class="form-group"><label>Colony / Project</label><input type="text" id="bk-proj" readonly></div>
+      <div class="form-group"><label>Plot Area (Sq. Yds)</label><input type="number" id="bk-area" readonly></div>
+      <div class="form-group"><label>Rate (Per Sq. Yard ₹) *</label><input type="number" id="bk-rate" oninput="calcBooking()"></div>
+      <div class="form-group"><label>Total Amount (₹)</label><input type="number" id="bk-total" readonly></div>
+      <div class="form-group"><label>Time for Registry (Days/Months)</label><input type="text" id="bk-time" placeholder="e.g. 3 Months"></div>
+    </div>
+
+    <h4 style="margin: 15px 0 5px;">Advance Payments (Auto-Deducted from Total)</h4>
+    <div class="grid">
+      <div class="form-group"><label>Advance 1 Date</label><input type="date" id="bk-a1d"></div>
+      <div class="form-group"><label>Advance 1 Amount (₹)</label><input type="number" id="bk-a1" value="0" oninput="calcBooking()"></div>
+      <div class="form-group"><label>Adv 1 Mode</label><select id="bk-a1m"><option>Cash</option><option>UPI</option><option>Transfer</option><option>Cheque</option></select></div>
+      <div class="form-group"><label>Adv 1 Received By</label><input type="text" id="bk-a1r"></div>
+
+      <div class="form-group"><label>Advance 2 Date</label><input type="date" id="bk-a2d"></div>
+      <div class="form-group"><label>Advance 2 Amount (₹)</label><input type="number" id="bk-a2" value="0" oninput="calcBooking()"></div>
+      <div class="form-group"><label>Adv 2 Mode</label><select id="bk-a2m"><option>Cash</option><option>UPI</option><option>Transfer</option><option>Cheque</option></select></div>
+      <div class="form-group"><label>Adv 2 Received By</label><input type="text" id="bk-a2r"></div>
+
+      <div class="form-group"><label>Advance 3 Date</label><input type="date" id="bk-a3d"></div>
+      <div class="form-group"><label>Advance 3 Amount (₹)</label><input type="number" id="bk-a3" value="0" oninput="calcBooking()"></div>
+      <div class="form-group"><label>Adv 3 Mode</label><select id="bk-a3m"><option>Cash</option><option>UPI</option><option>Transfer</option><option>Cheque</option></select></div>
+      <div class="form-group"><label>Adv 3 Received By</label><input type="text" id="bk-a3r"></div>
+    </div>
+
+    <div class="grid" style="margin-top:10px;">
+      <div class="form-group"><label>Remaining Balance (₹)</label><input type="number" id="bk-bal" readonly></div>
+      <div class="form-group"><label>Note / Agent Info & Commission</label><input type="text" id="bk-note"></div>
+    </div>
+    <button class="btn btn-success" onclick="saveBooking()">Save Booking & Generate Receipt PDF</button>
+
+    <h2 style="margin-top: 25px;">Active Bookings</h2>
+    <div class="table-responsive">
+      <table id="tbl-book">
+        <thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Plot</th><th>Total (₹)</th><th>Paid (₹)</th><th>Balance (₹)</th><th>Status</th><th>Receipt</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 7: PLOT REGISTRY / CANCELLATION -->
+  <div id="tab-plot-reg" class="tab-content card">
+    <h2>Plot Registration (Marks Plot as SOLD)</h2>
+    <div class="grid">
+      <div class="form-group"><label>Select Booked Plot Invoice *</label><select id="pr-inv" onchange="loadBookingForReg()"><option value="">-- Select Booking --</option></select></div>
+      <div class="form-group"><label>Date of Registry *</label><input type="date" id="pr-date"></div>
+      <div class="form-group"><label>Customer & Plot Info</label><input type="text" id="pr-info" readonly></div>
+      <div class="form-group"><label>Balance Due at Registry (₹)</label><input type="number" id="pr-due" readonly></div>
+      <div class="form-group"><label>Amount in Bank Account (₹)</label><input type="number" id="pr-bankamt" value="0" oninput="calcPlotReg()"></div>
+      <div class="form-group"><label>Account Holder & Acc No.</label><input type="text" id="pr-bankdet"></div>
+      <div class="form-group"><label>Cash Amount Paid (₹)</label><input type="number" id="pr-cash" value="0" oninput="calcPlotReg()"></div>
+      <div class="form-group"><label>Commission Deduction (₹)</label><input type="number" id="pr-comm" value="0" oninput="calcPlotReg()"></div>
+      <div class="form-group"><label>Udhar Balance Remaining (₹)</label><input type="number" id="pr-udhar" readonly></div>
+    </div>
+    <h4 style="margin: 15px 0 5px;">Registry Legal Details</h4>
+    <div class="grid">
+      <div class="form-group"><label>Wahi Number</label><input type="text" id="pr-wahi"></div>
+      <div class="form-group"><label>Jild Number</label><input type="text" id="pr-jild"></div>
+      <div class="form-group"><label>Kramank</label><input type="text" id="pr-kramank"></div>
+      <div class="form-group"><label>Prushth</label><input type="text" id="pr-prushth"></div>
+      <div class="form-group"><label>Registration Date</label><input type="date" id="pr-regdt"></div>
+    </div>
+    <button class="btn btn-success" onclick="completePlotRegistry()">Complete Registry (Mark SOLD) & Print PDF</button>
+
+    <h2 style="margin-top: 30px;">Cancel Booking / Registration</h2>
+    <div class="grid">
+      <div class="form-group"><label>Select Booking to Cancel *</label><select id="can-inv" onchange="calcCancel()"><option value="">-- Select Booking --</option></select></div>
+      <div class="form-group"><label>Total Paid by Customer (₹)</label><input type="number" id="can-paid" readonly></div>
+      <div class="form-group"><label>Deduction Percentage (%)</label><input type="number" id="can-pct" value="10" oninput="calcCancel()"></div>
+      <div class="form-group"><label>Refundable Amount (₹)</label><input type="number" id="can-refund" readonly></div>
+    </div>
+    <button class="btn btn-danger" onclick="processCancellation()">Cancel Booking & Generate Refund PDF</button>
+  </div>
+
+  <!-- TAB 8: ACCOUNTING -->
+  <div id="tab-acc" class="tab-content card">
+    <h2>Journal Entry Form</h2>
+    <div class="grid">
+      <div class="form-group"><label>Date *</label><input type="date" id="je-date"></div>
+      <div class="form-group"><label>Account Name *</label><input type="text" id="je-acc" placeholder="e.g. Cash, Bank, Land Expense"></div>
+      <div class="form-group"><label>Description</label><input type="text" id="je-desc"></div>
+      <div class="form-group"><label>Ref. No.</label><input type="text" id="je-ref"></div>
+      <div class="form-group"><label>Debit (₹)</label><input type="number" id="je-dr" value="0"></div>
+      <div class="form-group"><label>Credit (₹)</label><input type="number" id="je-cr" value="0"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveJournal()">Post Journal Entry</button>
+
+    <h2 style="margin-top: 25px;">Automatic Ledger & Trial Balance</h2>
+    <div class="table-responsive">
+      <table id="tbl-ledger">
+        <thead><tr><th>Date</th><th>Account</th><th>Description</th><th>Ref</th><th>Debit (₹)</th><th>Credit (₹)</th><th>Running Balance (₹)</th></tr></thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr style="font-weight:bold; background:#e2e8f0;">
+            <td colspan="4">Grand Total</td>
+            <td id="tot-dr">0.00</td>
+            <td id="tot-cr">0.00</td>
+            <td id="tot-bal">INR 0.00</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- PRINT / PDF MODAL -->
+<div id="print-modal">
+  <div class="print-box">
+    <div id="print-area"></div>
+    <div class="no-print" style="margin-top:20px; text-align:right;">
+      <button class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
+      <button class="btn btn-danger" onclick="document.getElementById('print-modal').style.display='none'">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // TODO: Replace with your actual Firebase project credentials
+  const firebaseConfig = {
+    apiKey: "YOUR_FIREBASE_API_KEY",
+    authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+    databaseURL: "YOUR_FIREBASE_DATABASE_URL",
+    projectId: "YOUR_FIREBASE_PROJECT_ID",
+    storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
+    appId: "YOUR_FIREBASE_APP_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+
+  let db = {
+    landAgreements: [],
+    inventory: [
+      { proj: 'Ram Vihar Phase 1', plot: 'A-101', size: 100, nature: 'Residential', corner: 'Corner', status: 'Available', east: 'A-102', west: '40ft Road', south: '50ft Road', north: 'Park' },
+      { proj: 'Ram Vihar Phase 1', plot: 'A-102', size: 120, nature: 'Residential', corner: 'Non-Corner', status: 'Available', east: 'A-103', west: 'A-101', south: '50ft Road', north: 'Park' }
+    ],
+    customers: [],
+    bookings: [],
+    journal: []
+  };
+
+  // Real-time synchronization from Firebase Cloud Database
+  database.ref('srpg_erp_data').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      db = data;
+      if(!db.landAgreements) db.landAgreements = [];
+      if(!db.inventory) db.inventory = [];
+      if(!db.customers) db.customers = [];
+      if(!db.bookings) db.bookings = [];
+      if(!db.journal) db.journal = [];
+    }
+    refreshAllUI();
+  });
+
+  function saveDB() {
+    database.ref('srpg_erp_data').set(db);
+  }
+
+  // Tab Navigation
+  function openTab(tabId) {
+    const tabs = document.querySelectorAll('.tab-content');
+    for (let i = 0; i < tabs.length; i++) {
+      tabs[i].classList.remove('active');
+    }
+    const btns = document.querySelectorAll('.nav-btn');
+    for (let i = 0; i < btns.length; i++) {
+      btns[i].classList.remove('active');
+    }
+    
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) targetTab.classList.add('active');
+    
+    const targetBtn = document.getElementById('btn-' + tabId);
+    if (targetBtn) targetBtn.classList.add('active');
+  }
+
+  // 1. LAND PURCHASE AGREEMENT
+  function addSellerRow() {
+    const div = document.createElement('div');
+    div.className = 'seller-row';
+    div.innerHTML = `
+      <div class="form-group"><input type="text" class="s-name" placeholder="Seller Name"></div>
+      <div class="form-group"><input type="text" class="s-mob" placeholder="Mobile"></div>
+      <div class="form-group"><input type="text" class="s-addr" placeholder="Address"></div>
+      <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>
+    `;
+    document.getElementById('sellers-container').appendChild(div);
+  }
+
+  function calcLandTotal() {
+    const area = parseFloat(document.getElementById('la-area').value) || 0;
+    const rate = parseFloat(document.getElementById('la-rate').value) || 0;
+    const adv = parseFloat(document.getElementById('la-adv').value) || 0;
+    const tot = area * rate;
+    document.getElementById('la-total').value = tot;
+    document.getElementById('la-bal').value = tot - adv;
+  }
+
+  function saveLandAgreement() {
+    const gata = document.getElementById('la-gata').value.trim();
+    const date = document.getElementById('la-date').value;
+    if (!gata || !date) return alert('Date and Gata Number are mandatory!');
+
+    let sellers = [];
+    document.querySelectorAll('.seller-row').forEach(row => {
+      const name = row.querySelector('.s-name').value.trim();
+      const mob = row.querySelector('.s-mob').value.trim();
+      const addr = row.querySelector('.s-addr').value.trim();
+      if (name) sellers.push({ name, mob, addr });
+    });
+
+    const adv = parseFloat(document.getElementById('la-adv').value) || 0;
+    const agreement = {
+      date, gata,
+      village: document.getElementById('la-village').value,
+      area: parseFloat(document.getElementById('la-area').value) || 0,
+      rate: parseFloat(document.getElementById('la-rate').value) || 0,
+      total: parseFloat(document.getElementById('la-total').value) || 0,
+      sellers,
+      bname: document.getElementById('la-bname').value,
+      bmob: document.getElementById('la-bmob').value,
+      baddr: document.getElementById('la-baddr').value,
+      regDate: document.getElementById('la-regdate').value,
+      dafa60: {
+        wahi: document.getElementById('la-wahi').value,
+        jild: document.getElementById('la-jild').value,
+        prushth: document.getElementById('la-prushth').value,
+        kramank: document.getElementById('la-kramank').value,
+        date: document.getElementById('la-d60date').value
+      },
+      payments: adv > 0 ? [{
+        date, amount: adv,
+        mode: document.getElementById('la-mode').value,
+        ref: document.getElementById('la-ref').value,
+        payer: document.getElementById('la-bname').value,
+        payee: sellers.map(s=>s.name).join(', '),
+        recby: document.getElementById('la-recby').value
+      }] : [],
+      registered: false
+    };
+
+    db.landAgreements.push(agreement);
+    saveDB();
+    alert('Land Agreement Saved to Cloud!');
+  }
+
+  function printLandAgreement(idx) {
+    const ag = db.landAgreements[idx];
+    const paid = ag.payments ? ag.payments.reduce((s, p) => s + p.amount, 0) : 0;
+    const payRows = ag.payments ? ag.payments.map(p => `<tr><td>${p.date}</td><td>₹${p.amount}</td><td>${p.mode} (${p.ref})</td><td>${p.payer} -> ${p.payee}</td></tr>`).join('') : '';
+    showPrint(`
+      <h2 style="text-align:center; border-bottom:2px solid #000; padding-bottom:5px;">LAND PURCHASE AGREEMENT</h2>
+      <p><strong>Agreement Date:</strong> ${ag.date} | <strong>Gata No:</strong> ${ag.gata} | <strong>Village:</strong> ${ag.village}</p>
+      <p><strong>Sellers:</strong> ${ag.sellers.map(s=>`${s.name} (${s.mob}) - ${s.addr}`).join('; ')}</p>
+      <p><strong>Buyer:</strong> ${ag.bname} (${ag.bmob}) - ${ag.baddr}</p>
+      <p><strong>Area:</strong> ${ag.area} Bigha | <strong>Rate:</strong> ₹${ag.rate}/Bigha | <strong>Total:</strong> ₹${ag.total}</p>
+      <p><strong>Target Registry Date:</strong> ${ag.regDate} (8:00 AM Reminder)</p>
+      <p><strong>Dafa 60 Details:</strong> Wahi: ${ag.dafa60.wahi}, Jild: ${ag.dafa60.jild}, Prushth: ${ag.dafa60.prushth}, Kramank: ${ag.dafa60.kramank}, Date: ${ag.dafa60.date}</p>
+      <h4>Installment Payment Ledger</h4>
+      <table border="1" width="100%" cellspacing="0" cellpadding="5">
+        <tr><th>Date</th><th>Amount</th><th>Mode / Ref</th><th>Payer / Payee</th></tr>
+        ${payRows}
+      </table>
+      <h3 style="text-align:right;">Total Paid: ₹${paid} | Remaining Balance: ₹${ag.total - paid}</h3>
+    `);
+  }
+
+  // 2. LAND REGISTRY
+  function fetchLandForRegistry() {
+    const gata = document.getElementById('lr-gata').value;
+    const ag = db.landAgreements.find(a => a.gata === gata);
+    if (!ag) return;
+    const paid = ag.payments ? ag.payments.reduce((s, p) => s + p.amount, 0) : 0;
+    document.getElementById('lr-village').value = ag.village;
+    document.getElementById('lr-sellers').value = ag.sellers.map(s=>s.name).join(', ');
+    document.getElementById('lr-buyer').value = ag.bname;
+    document.getElementById('lr-area').value = ag.area;
+    document.getElementById('lr-total').value = ag.total;
+    document.getElementById('lr-paid').value = paid;
+    document.getElementById('lr-finalpay').value = ag.total - paid;
+    document.getElementById('lr-bal').value = 0;
+  }
+
+  function calcLandRegBal() {
+    const tot = parseFloat(document.getElementById('lr-total').value) || 0;
+    const paid = parseFloat(document.getElementById('lr-paid').value) || 0;
+    const fpay = parseFloat(document.getElementById('lr-finalpay').value) || 0;
+    document.getElementById('lr-bal').value = tot - (paid + fpay);
+  }
+
+  function saveLandRegistry() {
+    const gata = document.getElementById('lr-gata').value;
+    const ag = db.landAgreements.find(a => a.gata === gata);
+    if (!ag) return alert('Select a valid Gata Number');
+
+    const fpay = parseFloat(document.getElementById('lr-finalpay').value) || 0;
+    const regDate = document.getElementById('lr-date').value;
+    if (fpay > 0) {
+      if(!ag.payments) ag.payments = [];
+      ag.payments.push({
+        date: regDate, amount: fpay,
+        mode: document.getElementById('lr-mode').value,
+        ref: document.getElementById('lr-ref').value,
+        payer: ag.bname, payee: ag.sellers.map(s=>s.name).join(', ')
+      });
+    }
+    ag.registered = true;
+    ag.regDetails = {
+      date: regDate,
+      wahi: document.getElementById('lr-wahi').value,
+      jild: document.getElementById('lr-jild').value,
+      prushth: document.getElementById('lr-prushth').value,
+      kramank: document.getElementById('lr-kramank').value,
+      d60date: document.getElementById('lr-d60date').value,
+      bal: document.getElementById('lr-bal').value
+    };
+    saveDB();
+
+    showPrint(`
+      <h2 style="text-align:center; border-bottom:2px solid #000; padding-bottom:5px;">LAND REGISTRY CERTIFICATE</h2>
+      <p><strong>Registry Date:</strong> ${regDate} | <strong>Gata No:</strong> ${ag.gata} | <strong>Village:</strong> ${ag.village}</p>
+      <p><strong>Sellers:</strong> ${ag.sellers.map(s=>s.name).join(', ')}</p>
+      <p><strong>Buyer:</strong> ${ag.bname}</p>
+      <p><strong>Area:</strong> ${ag.area} Bighas | <strong>Total Value:</strong> ₹${ag.total}</p>
+      <p><strong>Registry Dafa 60:</strong> Wahi: ${ag.regDetails.wahi}, Jild: ${ag.regDetails.jild}, Prushth: ${ag.regDetails.prushth}, Kramank: ${ag.regDetails.kramank}, Date: ${ag.regDetails.d60date}</p>
+      <h3>Final Balance Remaining: ₹${ag.regDetails.bal}</h3>
+    `);
+  }
+
+  // 3. INVENTORY
+  function saveInventory() {
+    const proj = document.getElementById('inv-proj').value.trim();
+    const plot = document.getElementById('inv-plot').value.trim();
+    const size = parseFloat(document.getElementById('inv-size').value) || 0;
+    if (!proj || !plot || size <= 0) return alert('Fill Project, Plot No, and Size.');
+
+    db.inventory.push({
+      proj, plot, size,
+      nature: document.getElementById('inv-nature').value,
+      corner: document.getElementById('inv-corner').value,
+      status: document.getElementById('inv-status').value,
+      east: document.getElementById('inv-east').value,
+      west: document.getElementById('inv-west').value,
+      south: document.getElementById('inv-south').value,
+      north: document.getElementById('inv-north').value
+    });
+    saveDB();
+    alert('Plot Added to Inventory!');
+  }
+
+  // 4. CUSTOMER CRM
+  function saveCustomer() {
+    const name = document.getElementById('crm-name').value.trim();
+    const mob1 = document.getElementById('crm-mob1').value.trim();
+    if (!name || !mob1) return alert('Full Name and Mobile are mandatory!');
+
+    db.customers.push({
+      id: document.getElementById('crm-id').value,
+      name, mob1,
+      mob2: document.getElementById('crm-mob2').value,
+      addr: document.getElementById('crm-addr').value,
+      req: document.getElementById('crm-req').value,
+      proj: document.getElementById('crm-proj').value,
+      src: document.getElementById('crm-src').value,
+      status: document.getElementById('crm-status').value,
+      last: document.getElementById('crm-last').value,
+      next: document.getElementById('crm-next').value,
+      agent: document.getElementById('crm-agent').value,
+      tprice: document.getElementById('crm-tprice').value,
+      cprice: document.getElementById('crm-cprice').value
+    });
+    saveDB();
+    alert('Customer Lead Saved!');
+  }
+
+  // 6. BOOKING
+  function fillBookingCust() {
+    const cid = document.getElementById('bk-custid').value;
+    const c = db.customers.find(x => x.id === cid);
+    if (c) {
+      document.getElementById('bk-cname').value = c.name;
+      document.getElementById('bk-cmob').value = c.mob1 + (c.mob2 ? ', ' + c.mob2 : '');
+      document.getElementById('bk-caddr').value = c.addr;
+    }
+  }
+
+  function fillBookingPlot() {
+    const idx = document.getElementById('bk-plot').value;
+    if (idx === '') return;
+    const p = db.inventory[idx];
+    document.getElementById('bk-proj').value = p.proj;
+    document.getElementById('bk-area').value = p.size;
+    calcBooking();
+  }
+
+  function calcBooking() {
+    const area = parseFloat(document.getElementById('bk-area').value) || 0;
+    const rate = parseFloat(document.getElementById('bk-rate').value) || 0;
+    const tot = area * rate;
+    const a1 = parseFloat(document.getElementById('bk-a1').value) || 0;
+    const a2 = parseFloat(document.getElementById('bk-a2').value) || 0;
+    const a3 = parseFloat(document.getElementById('bk-a3').value) || 0;
+    document.getElementById('bk-total').value = tot;
+    document.getElementById('bk-bal').value = tot - (a1 + a2 + a3);
+  }
+
+  function saveBooking() {
+    const plotIdx = document.getElementById('bk-plot').value;
+    const cname = document.getElementById('bk-cname').value;
+    if (plotIdx === '' || !cname) return alert('Select Plot and Customer!');
+
+    const plotObj = db.inventory[plotIdx];
+    plotObj.status = 'Booked';
+
+    const a1 = parseFloat(document.getElementById('bk-a1').value) || 0;
+    const a2 = parseFloat(document.getElementById('bk-a2').value) || 0;
+    const a3 = parseFloat(document.getElementById('bk-a3').value) || 0;
+    const tot = parseFloat(document.getElementById('bk-total').value) || 0;
+
+    const bk = {
+      inv: document.getElementById('bk-inv').value,
+      date: document.getElementById('bk-date').value,
+      custId: document.getElementById('bk-custid').value,
+      cname,
+      cmob: document.getElementById('bk-cmob').value,
+      caddr: document.getElementById('bk-caddr').value,
+      proj: plotObj.proj,
+      plot: plotObj.plot,
+      area: plotObj.size,
+      boundaries: `E:${plotObj.east}, W:${plotObj.west}, S:${plotObj.south}, N:${plotObj.north}`,
+      rate: parseFloat(document.getElementById('bk-rate').value) || 0,
+      total: tot,
+      advances: [
+        { date: document.getElementById('bk-a1d').value, amt: a1, mode: document.getElementById('bk-a1m').value, rec: document.getElementById('bk-a1r').value },
+        { date: document.getElementById('bk-a2d').value, amt: a2, mode: document.getElementById('bk-a2m').value, rec: document.getElementById('bk-a2r').value },
+        { date: document.getElementById('bk-a3d').value, amt: a3, mode: document.getElementById('bk-a3m').value, rec: document.getElementById('bk-a3r').value }
+      ],
+      paid: a1 + a2 + a3,
+      bal: tot - (a1 + a2 + a3),
+      time: document.getElementById('bk-time').value,
+      note: document.getElementById('bk-note').value,
+      status: 'Booked'
+    };
+
+    db.bookings.push(bk);
+    saveDB();
+    printBookingReceipt(db.bookings.length - 1);
+  }
+
+  function printBookingReceipt(idx) {
+    const b = db.bookings[idx];
+    const advRows = b.advances.filter(a=>a.amt>0).map((a,i) => `<tr><td>Advance ${i+1}</td><td>${a.date}</td><td>₹${a.amt}</td><td>${a.mode}</td><td>${a.rec}</td></tr>`).join('');
+    showPrint(`
+      <h2 style="text-align:center; border-bottom:2px solid #000; padding-bottom:5px;">PLOT BOOKING RECEIPT</h2>
+      <p><strong>Invoice No:</strong> ${b.inv} | <strong>Booking Date:</strong> ${b.date}</p>
+      <p><strong>Customer:</strong> ${b.cname} (${b.custId}) | <strong>Mobile:</strong> ${b.cmob}</p>
+      <p><strong>Address:</strong> ${b.caddr}</p>
+      <hr>
+      <p><strong>Project:</strong> ${b.proj} | <strong>Plot No:</strong> ${b.plot} | <strong>Area:</strong> ${b.area} Sq. Yds</p>
+      <p><strong>Boundaries:</strong> ${b.boundaries}</p>
+      <p><strong>Rate:</strong> ₹${b.rate}/Sq.Yd | <strong>Total Amount:</strong> ₹${b.total}</p>
+      <table border="1" width="100%" cellspacing="0" cellpadding="5">
+        <tr><th>Installment</th><th>Date</th><th>Amount</th><th>Mode</th><th>Received By</th></tr>
+        ${advRows}
+      </table>
+      <p><strong>Registry Time Allowed:</strong> ${b.time} | <strong>Note/Commission:</strong> ${b.note}</p>
+      <h3 style="text-align:right;">Total Paid: ₹${b.paid} | Balance Due: ₹${b.bal}</h3>
+    `);
+  }
+
+  // 7. PLOT REGISTRY & CANCELLATION
+  function loadBookingForReg() {
+    const inv = document.getElementById('pr-inv').value;
+    const b = db.bookings.find(x => x.inv === inv);
+    if (!b) return;
+    document.getElementById('pr-info').value = `${b.cname} - ${b.proj} (${b.plot})`;
+    document.getElementById('pr-due').value = b.bal;
+    calcPlotReg();
+  }
+
+  function calcPlotReg() {
+    const due = parseFloat(document.getElementById('pr-due').value) || 0;
+    const bank = parseFloat(document.getElementById('pr-bankamt').value) || 0;
+    const cash = parseFloat(document.getElementById('pr-cash').value) || 0;
+    const comm = parseFloat(document.getElementById('pr-comm').value) || 0;
+    document.getElementById('pr-udhar').value = due - (bank + cash + comm);
+  }
+
+  function completePlotRegistry() {
+    const inv = document.getElementById('pr-inv').value;
+    const b = db.bookings.find(x => x.inv === inv);
+    if (!b) return alert('Select a valid booking!');
+
+    b.status = 'Sold';
+    const plotObj = db.inventory.find(p => p.proj === b.proj && p.plot === b.plot);
+    if (plotObj) plotObj.status = 'Sold';
+
+    const regData = {
+      date: document.getElementById('pr-date').value,
+      bankAmt: document.getElementById('pr-bankamt').value,
+      bankDet: document.getElementById('pr-bankdet').value,
+      cash: document.getElementById('pr-cash').value,
+      comm: document.getElementById('pr-comm').value,
+      udhar: document.getElementById('pr-udhar').value,
+      wahi: document.getElementById('pr-wahi').value,
+      jild: document.getElementById('pr-jild').value,
+      kramank: document.getElementById('pr-kramank').value,
+      prushth: document.getElementById('pr-prushth').value,
+      regDt: document.getElementById('pr-regdt').value
+    };
+    b.registry = regData;
+    saveDB();
+
+    showPrint(`
+      <h2 style="text-align:center; border-bottom:2px solid #000; padding-bottom:5px;">PLOT REGISTRATION SLIP (SOLD)</h2>
+      <p><strong>Invoice:</strong> ${b.inv} | <strong>Registry Date:</strong> ${regData.date}</p>
+      <p><strong>Customer:</strong> ${b.cname} | <strong>Project:</strong> ${b.proj} | <strong>Plot:</strong> ${b.plot}</p>
+      <p><strong>Total Deal:</strong> ₹${b.total} | <strong>Advance Paid:</strong> ₹${b.paid}</p>
+      <p><strong>Bank Payment:</strong> ₹${regData.bankAmt} (${regData.bankDet}) | <strong>Cash:</strong> ₹${regData.cash}</p>
+      <p><strong>Commission Deducted:</strong> ₹${regData.comm} | <strong>Udhar Balance:</strong> ₹${regData.udhar}</p>
+      <hr>
+      <p><strong>Registry Details:</strong> Wahi No: ${regData.wahi} | Jild No: ${regData.jild} | Kramank: ${regData.kramank} | Prushth: ${regData.prushth} | Date: ${regData.regDt}</p>
+    `);
+  }
+
+  function calcCancel() {
+    const inv = document.getElementById('can-inv').value;
+    const b = db.bookings.find(x => x.inv === inv);
+    if (!b) return;
+    document.getElementById('can-paid').value = b.paid;
+    const pct = parseFloat(document.getElementById('can-pct').value) || 0;
+    document.getElementById('can-refund').value = b.paid - (b.paid * pct / 100);
+  }
+
+  function processCancellation() {
+    const inv = document.getElementById('can-inv').value;
+    const b = db.bookings.find(x => x.inv === inv);
+    if (!b) return alert('Select booking to cancel');
+
+    b.status = 'Cancelled';
+    const plotObj = db.inventory.find(p => p.proj === b.proj && p.plot === b.plot);
+    if (plotObj) plotObj.status = 'Available';
+
+    const pct = document.getElementById('can-pct').value;
+    const refAmt = document.getElementById('can-refund').value;
+    saveDB();
+
+    showPrint(`
+      <h2 style="text-align:center; border-bottom:2px solid #dc2626; color:#dc2626; padding-bottom:5px;">BOOKING CANCELLATION & REFUND SLIP</h2>
+      <p><strong>Invoice No:</strong> ${b.inv} | <strong>Customer:</strong> ${b.cname}</p>
+      <p><strong>Project:</strong> ${b.proj} | <strong>Plot No:</strong> ${b.plot}</p>
+      <p><strong>Total Amount Deposited:</strong> ₹${b.paid}</p>
+      <p><strong>Deduction Applied:</strong> ${pct}%</p>
+      <h3>Net Refundable Amount: ₹${refAmt}</h3>
+    `);
+  }
+
+  // 8. ACCOUNTING
+  function saveJournal() {
+    const date = document.getElementById('je-date').value;
+    const acc = document.getElementById('je-acc').value.trim();
+    const dr = parseFloat(document.getElementById('je-dr').value) || 0;
+    const cr = parseFloat(document.getElementById('je-cr').value) || 0;
+    if (!date || !acc) return alert('Date and Account are mandatory!');
+
+    db.journal.push({
+      date, acc,
+      desc: document.getElementById('je-desc').value,
+      ref: document.getElementById('je-ref').value,
+      dr, cr
+    });
+    saveDB();
+  }
+
+  // PRINT HELPER WITH LETTERHEAD
+  function showPrint(bodyHTML) {
+    const header = `
+      <div style="text-align:center; border-bottom:3px solid #000; padding-bottom:10px; margin-bottom:15px;">
+        <h1 style="margin:0; font-size:20px;">SHRI RAM PRAKASH AND GROUP</h1>
+        <p style="margin:2px 0; font-size:12px;">NEAR DOORDARSHAN KENDRA, BADAUN ROAD, LAL PHATAK, KANDHARPUR, BAREILLY (U.P.)</p>
+        <p style="margin:2px 0; font-size:11px;">Contact: 9758029525, 9368394114, 7900333344, 9368520642 | www.shriramprakash.com | shriramprakashandgroup@gmail.com</p>
+      </div>
+    `;
+    document.getElementById('print-area').innerHTML = header + bodyHTML;
+    document.getElementById('print-modal').style.display = 'block';
+  }
+
+  // REFRESH ALL TABLES & DROPDOWNS
+  function refreshAllUI() {
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = today; });
+    const crmIdElem = document.getElementById('crm-id');
+    const bkInvElem = document.getElementById('bk-inv');
+    if(crmIdElem) crmIdElem.value = 'CUST-' + (1001 + (db.customers ? db.customers.length : 0));
+    if(bkInvElem) bkInvElem.value = 'INV-' + (2026001 + (db.bookings ? db.bookings.length : 0));
+
+    // Land Agreements Table & Dropdowns
+    const tblLand = document.querySelector('#tbl-land tbody');
+    const instGata = document.getElementById('inst-gata');
+    const lrGata = document.getElementById('lr-gata');
+    if(tblLand) tblLand.innerHTML = ''; 
+    if(instGata) instGata.innerHTML = ''; 
+    if(lrGata) lrGata.innerHTML = '<option value="">-- Select Gata --</option>';
+
+    if(db.landAgreements) {
+      db.landAgreements.forEach((ag, i) => {
+        const paid = ag.payments ? ag.payments.reduce((s, p) => s + p.amount, 0) : 0;
+        if(tblLand) {
+          tblLand.innerHTML += `<tr>
+            <td>${ag.gata}</td><td>${ag.village}</td><td>${ag.sellers ? ag.sellers.map(s=>s.name).join(', ') : ''}</td>
+            <td>${ag.area}</td><td>₹${ag.total}</td><td>₹${paid}</td><td>₹${ag.total - paid}</td>
+            <td>${ag.regDate} ${ag.registered ? '<span class="badge bg-sold">Registered</span>' : ''}</td>
+            <td><button class="btn btn-primary btn-sm" onclick="printLandAgreement(${i})">PDF</button></td>
+          </tr>`;
+        }
+        if (!ag.registered) {
+          if(instGata) instGata.innerHTML += `<option value="${ag.gata}">${ag.gata} - ${ag.village}</option>`;
+          if(lrGata) lrGata.innerHTML += `<option value="${ag.gata}">${ag.gata} - ${ag.village}</option>`;
+        }
+      });
+    }
+
+    // Inventory Table & Available Plots Dropdown
+    const tblInv = document.querySelector('#tbl-inv tbody');
+    const bkPlot = document.getElementById('bk-plot');
+    if(tblInv) tblInv.innerHTML = ''; 
+    if(bkPlot) bkPlot.innerHTML = '<option value="">-- Select Available Plot --</option>';
+    
+    if(db.inventory) {
+      db.inventory.forEach((p, idx) => {
+        let badgeClass = p.status === 'Available' ? 'bg-avail' : (p.status === 'Booked' ? 'bg-booked' : 'bg-sold');
+        if(tblInv) {
+          tblInv.innerHTML += `<tr>
+            <td>${p.proj}</td><td>${p.plot}</td><td>${p.size}</td><td>${p.nature} (${p.corner})</td>
+            <td>E:${p.east} | W:${p.west} | S:${p.south} | N:${p.north}</td>
+            <td><span class="badge ${badgeClass}">${p.status}</span></td>
+          </tr>`;
+        }
+        if (p.status === 'Available' && bkPlot) {
+          bkPlot.innerHTML += `<option value="${idx}">${p.proj} - Plot ${p.plot} (${p.size} Sq.Yd)</option>`;
+        }
+      });
+    }
+
+    // Customers & Followups
+    const tblCrm = document.querySelector('#tbl-crm tbody');
+    const tblFollow = document.querySelector('#tbl-follow tbody');
+    const bkCust = document.getElementById('bk-custid');
+    if(tblCrm) tblCrm.innerHTML = ''; 
+    if(tblFollow) tblFollow.innerHTML = ''; 
+    if(bkCust) bkCust.innerHTML = '<option value="">-- Select Customer --</option>';
+    
+    if(db.customers) {
+      db.customers.forEach(c => {
+        if(tblCrm) {
+          tblCrm.innerHTML += `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.mob1}</td><td>${c.proj}</td><td>${c.status}</td><td>${c.next}</td><td>₹${c.tprice} / ₹${c.cprice}</td><td>${c.agent}</td></tr>`;
+        }
+        if(bkCust) {
+          bkCust.innerHTML += `<option value="${c.id}">${c.id} - ${c.name}</option>`;
+        }
+        if (c.status !== 'Inactive' && tblFollow) {
+          tblFollow.innerHTML += `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.mob1}</td><td>${c.proj}</td><td><strong>${c.next}</strong></td><td>${c.status}</td><td>${c.agent}</td></tr>`;
+        }
+      });
+    }
+
+    // Bookings Table & Registry/Cancel Dropdowns
+    const tblBook = document.querySelector('#tbl-book tbody');
+    const prInv = document.getElementById('pr-inv');
+    const canInv = document.getElementById('can-inv');
+    if(tblBook) tblBook.innerHTML = ''; 
+    if(prInv) prInv.innerHTML = '<option value="">-- Select Booking --</option>'; 
+    if(canInv) canInv.innerHTML = '<option value="">-- Select Booking --</option>';
+    
+    if(db.bookings) {
+      db.bookings.forEach((b, idx) => {
+        if(tblBook) {
+          tblBook.innerHTML += `<tr>
+            <td>${b.inv}</td><td>${b.date}</td><td>${b.cname}</td><td>${b.proj} (${b.plot})</td>
+            <td>₹${b.total}</td><td>₹${b.paid}</td><td>₹${b.bal}</td><td>${b.status}</td>
+            <td><button class="btn btn-primary btn-sm" onclick="printBookingReceipt(${idx})">PDF</button></td>
+          </tr>`;
+        }
+        if (b.status === 'Booked') {
+          if(prInv) prInv.innerHTML += `<option value="${b.inv}">${b.inv} - ${b.cname} (${b.plot})</option>`;
+          if(canInv) canInv.innerHTML += `<option value="${b.inv}">${b.inv} - ${b.cname} (${b.plot})</option>`;
+        }
+      });
+    }
+
+    // Accounting Ledger
+    const tblLed = document.querySelector('#tbl-ledger tbody');
+    if(tblLed) {
+      tblLed.innerHTML = '';
+      let totDr = 0, totCr = 0, runBal = 0;
+      if(db.journal) {
+        db.journal.forEach(j => {
+          totDr += j.dr; totCr += j.cr;
+          runBal += (j.dr - j.cr);
+          tblLed.innerHTML += `<tr><td>${j.date}</td><td>${j.acc}</td><td>${j.desc}</td><td>${j.ref}</td><td>${j.dr.toFixed(2)}</td><td>${j.cr.toFixed(2)}</td><td>INR ${runBal.toFixed(2)}</td></tr>`;
+        });
+      }
+      const dElem = document.getElementById('tot-dr');
+      const cElem = document.getElementById('tot-cr');
+      const bElem = document.getElementById('tot-bal');
+      if(dElem) dElem.innerText = totDr.toFixed(2);
+      if(cElem) cElem.innerText = totCr.toFixed(2);
+      if(bElem) bElem.innerText = 'INR ' + runBal.toFixed(2);
+    }
+  }
+</script>
+</body>
+</html>
